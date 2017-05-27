@@ -1,7 +1,11 @@
+dist: trusty
+sudo: required # this is necessary to get gcc-4.8 for some reason (otherwise gcc-4.6 is used)
 language: python
-before_install:
-  - sudo apt-get install -y libjudy-dev
-  - pip install cython
-script:
-  - python setup.py install
-  - python test/test.py
+python:
+  - 2.7
+  - 3.2
+  - 3.3
+  - 3.4
+  - 3.5
+install: pip install -r requirements.txt
+script: make test

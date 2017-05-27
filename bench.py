@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import print_function
 
 import time
 import random
@@ -15,39 +16,25 @@ parser.add_argument('--bits', dest='bits', type=int, default=3,
     help='How many bits may differ')
 parser.add_argument('--hashes', dest='hashes', type=str, default=None,
     help='Path to file with hashes to insert')
-parser.add_argument('--queries', dest='queries', type=str, default=None,
-    help='Path to file with queries to run')
 
 args = parser.parse_args()
 
-corpus = simhash.Corpus(args.blocks, args.bits)
-
-# Hashes to run, query
 hashes  = []
-queries = []
 
 if args.hashes:
     with open(args.hashes) as f:
         hashes = [int(l) for l in f.split('\n')]
 
-if args.queries:
-    with open(args.queries) as f:
-        queries = [int(l) for l in f.split('\n')]
-
 if args.random:
-    if args.hashes and args.queries:
-        print 'Random supplied with both --hashes and --queries'
+    if args.hashes:
+        print('Random supplied with --hashes')
         exit(1)
 
     if not hashes:
-        print 'Generating %i hashes' % args.random
+        print('Generating %i hashes' % args.random)
         hashes = [random.randint(0, 1 << 64) for i in range(args.random)]
-
-    if not queries:
-        print 'Generating %i queries' % args.random
-        queries = [random.randint(0, 1 << 64) for i in range(args.random)]
-elif not args.hashes or args.queries:
-    print 'No hashes or queries supplied'
+elif not args.hashes:
+    print('No hashes or queries supplied')
     exit(2)
 
 class Timer(object):
@@ -56,24 +43,15 @@ class Timer(object):
 
     def __enter__(self):
         self.start = -time.time()
-        print 'Starting %s' % self.name
+        print('Starting %s' % self.name)
         return self
 
     def __exit__(self, t, v, tb):
         self.start += time.time()
         if t:
-            print '  Failed %s in %fs' % (self.name, self.start)
+            print('  Failed %s in %fs' % (self.name, self.start))
         else:
-            print '     Ran %s in %fs' % (self.name, self.start)
+            print('     Ran %s in %fs' % (self.name, self.start))
 
-with Timer('Bulk Insertion'):
-    corpus.insert_bulk(hashes)
-
-with Timer('Bulk Find First'):
-    corpus.find_first_bulk(queries)
-
-with Timer('Bulk Find All'):
-    corpus.find_all_bulk(queries)
-
-with Timer('Bulk Removal'):
-    corpus.remove_bulk(hashes)
+with Timer('Find all'):
+    len(simhash.find_all(hashes, args.blocks, args.bits))
